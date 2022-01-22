@@ -13,8 +13,10 @@
 #include <thread>
 
 volatile bool run = true;
+volatile bool reread_config = false;
 
 void siginthandler(int signo);
+void sighuphandler(int signo);
 
 int main(void)
 {
@@ -22,11 +24,15 @@ int main(void)
    {
       std::cerr << "Unable to register signal handler: " << strerror(errno) << std::endl;
    }
+   if (::signal(SIGHUP, sighuphandler) == SIG_ERR)
+   {
+      std::cerr << "Unable to register signal handler: " << strerror(errno) << std::endl;
+   }
 
    try
    {
       const std::string settingsFile = homeDirectory() + "/.config/autolight.cfg";
-      const auto settings = readSettings(settingsFile);
+      auto settings = readSettings(settingsFile);
       MqttClient mqtt{
          MqttClientSettings{settings.mqtt_host, {}, {}, "lightcontroller", ""}};
       AmbientLightMqttCallback ambient_light(mqtt, settings.ambient_light_topic);
@@ -53,6 +59,21 @@ int main(void)
                           });
             }
          }
+
+         if (reread_config)
+         {
+            reread_config = false;
+            try
+            {
+               std::cout << "Re-reading configuration ... " << std::flush;
+               settings = readSettings(settingsFile);
+               std::cout << "done" << std::endl;
+            }
+            catch (const std::exception& err)
+            {
+               std::cout << "failed: " << err.what() << std::endl;
+            }
+         }
          std::this_thread::sleep_for(std::chrono::seconds(1));
       }
    }
@@ -72,4 +93,9 @@ void siginthandler(int)
       exit(EXIT_FAILURE);
    else
       run = false;
+}
+
+void sighuphandler(int)
+{
+   reread_config = true;
 }
