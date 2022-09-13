@@ -53,7 +53,10 @@ int main(void)
                auto& old_state = lamp_state[index];
                handleLamp(time, ambient_light.ambientLight().value(), lamp_settings,
                           old_state, [&mqtt, &lamp_settings](bool ison) {
-                             switchLamp(mqtt, lamp_settings.topic, ison);
+                             for (const auto& topic : lamp_settings.topic)
+                             {
+                                switchLamp(mqtt, topic, ison);
+                             }
                              std::cout << "Switching " << lamp_settings.name << ' '
                                        << (ison ? "on" : "off") << std::endl;
                           });

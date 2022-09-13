@@ -30,7 +30,7 @@ struct LampTime
 struct LampSettings
 {
    std::string name;
-   std::string topic;
+   std::vector<std::string> topic;
    float ambient_light_threshold;
    float ambient_light_hysteresis;
    std::vector<LampTime> timings;

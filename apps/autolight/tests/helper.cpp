@@ -12,7 +12,7 @@ LampSettings makeSettings()
 {
    LampSettings settings;
    settings.name = "test lamp";
-   settings.topic = "test/topic";
+   settings.topic = {"test/topic"};
    settings.ambient_light_threshold = 900.0f;
    settings.ambient_light_hysteresis = 5.0f;
    settings.timings = {{Weekday::SUNDAY, 8 * 60, 10 * 60}};

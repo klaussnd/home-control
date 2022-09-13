@@ -30,13 +30,25 @@ Settings readSettings(const std::string& path)
       const auto& conf_lamps = conf.lookup("lamps");
       if (conf_lamps.getType() != libconfig::Setting::TypeList)
       {
-         throw std::runtime_error("'lamps' must be a list");
+         throw std::runtime_error("Error near line "
+                                  + std::to_string(conf_lamps.getSourceLine())
+                                  + ": 'lamps' must be a list");
       }
       for (const auto& conf_lamp : conf_lamps)
       {
          LampSettings lamp_settings;
          lamp_settings.name = static_cast<std::string>(conf_lamp.lookup("name"));
-         lamp_settings.topic = static_cast<std::string>(conf_lamp.lookup("mqtt_topic"));
+         const auto& conf_topic = conf_lamp.lookup("mqtt_topic");
+         if (conf_topic.getType() != libconfig::Setting::TypeList)
+         {
+            throw std::runtime_error("Error near line "
+                                     + std::to_string(conf_topic.getSourceLine())
+                                     + ": 'mqtt_topic' must be a list");
+         }
+         for (const auto& topic : conf_topic)
+         {
+            lamp_settings.topic.push_back(static_cast<std::string>(topic));
+         }
          lamp_settings.ambient_light_threshold =
             static_cast<float>(conf_lamp.lookup("ambientlight_threshold"));
          lamp_settings.ambient_light_hysteresis = hysteresis;
@@ -44,7 +56,9 @@ Settings readSettings(const std::string& path)
          const auto& conf_schedule = conf_lamp.lookup("schedule");
          if (conf_schedule.getType() != libconfig::Setting::TypeList)
          {
-            throw std::runtime_error("'schedule' must be a list");
+            throw std::runtime_error("Error near line "
+                                     + std::to_string(conf_schedule.getSourceLine())
+                                     + ": 'schedule' must be a list");
          }
          for (const auto& schedule_item : conf_schedule)
          {

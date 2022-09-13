@@ -18,7 +18,7 @@ TEST(ASettingsReader, readsExampleFile)
    {
       const auto& lamp1 = settings.lamps[0];
       ASSERT_THAT(lamp1.name, StrEq("stairs"));
-      ASSERT_THAT(lamp1.topic, StrEq("home/stairs/cmnd/POWER2"));
+      ASSERT_THAT(lamp1.topic, ElementsAre(StrEq("home/stairs/cmnd/POWER2")));
       ASSERT_THAT(lamp1.ambient_light_threshold, FloatEq(960.0f));
       ASSERT_THAT(lamp1.ambient_light_hysteresis, FloatEq(7.0f));
       ASSERT_THAT(lamp1.timings, SizeIs(2));
@@ -34,7 +34,7 @@ TEST(ASettingsReader, readsExampleFile)
    {
       const auto& lamp2 = settings.lamps[1];
       ASSERT_THAT(lamp2.name, StrEq("outside"));
-      ASSERT_THAT(lamp2.topic, StrEq("home/outside/lamp/cmnd/POWER1"));
+      ASSERT_THAT(lamp2.topic, ElementsAre(StrEq("home/outside/lamp/cmnd/POWER1")));
       ASSERT_THAT(lamp2.ambient_light_threshold, FloatEq(950.0f));
       ASSERT_THAT(lamp2.ambient_light_hysteresis, FloatEq(7.0f));
       ASSERT_THAT(lamp2.timings, SizeIs(1));
