@@ -70,6 +70,7 @@ int main(void)
             {
                std::cout << "Re-reading configuration ... " << std::flush;
                settings = readSettings(settingsFile);
+               lamp_state.resize(settings.lamps.size(), LampState::UNKNOWN);
                std::cout << "done" << std::endl;
             }
             catch (const std::exception& err)
