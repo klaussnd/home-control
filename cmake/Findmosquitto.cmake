@@ -16,8 +16,10 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(mosquitto DEFAULT_MSG MOSQUITTO_INCLUDE_DIR MOSQUITTO_LIBRARY)
 mark_as_advanced(MOSQUITTO_INCLUDE_DIR MOSQUITTO_LIBRARY)
 
-add_library(mosquitto::mosquitto UNKNOWN IMPORTED)
-set_target_properties(mosquitto::mosquitto PROPERTIES
-    IMPORTED_LOCATION "${MOSQUITTO_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${MOSQUITTO_INCLUDE_DIR}"
-)
+if(MOSQUITTO_FOUND)
+    add_library(mosquitto::mosquitto UNKNOWN IMPORTED)
+    set_target_properties(mosquitto::mosquitto PROPERTIES
+        IMPORTED_LOCATION "${MOSQUITTO_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${MOSQUITTO_INCLUDE_DIR}"
+    )
+endif()
