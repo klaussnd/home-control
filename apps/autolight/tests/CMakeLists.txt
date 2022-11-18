@@ -1,4 +1,4 @@
-add_executable(tests_unit
+add_executable(tests_unit_autolight
     runner.cpp
     test_output.cpp
     test_output_functions.cpp
@@ -7,7 +7,7 @@ add_executable(tests_unit
     ../lamp_control.cpp
     ../settings_reader.cpp
 )
-target_link_libraries(tests_unit
+target_link_libraries(tests_unit_autolight
    PRIVATE
       gtest
       gmock

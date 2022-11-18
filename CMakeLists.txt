@@ -13,6 +13,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 find_package(mosquitto REQUIRED)
 find_package(libconfig REQUIRED)
+find_package(libgpiod REQUIRED)
 
 if(BUILD_TESTS)
     set(GOOGLETEST_DIR "/usr/src/googletest" CACHE STRING "Location of googletest sources")
@@ -23,3 +24,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(libs/mqttbase)
 add_subdirectory(apps/autolight)
+add_subdirectory(apps/gpio_ctrl)

@@ -1,0 +1,11 @@
+add_executable(tests_unit_gpio_ctrl
+    runner.cpp
+    test_settings_reader.cpp
+    ../settings_reader.cpp
+)
+target_link_libraries(tests_unit_gpio_ctrl
+   PRIVATE
+      gtest
+      gmock
+      libconfig::libconfig
+)
