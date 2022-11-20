@@ -64,7 +64,8 @@ protected:
    };
 
    bool connect(ConnectType how);
-   std::string fullTopic(const std::string& topic);
+   std::string fullTopic(const std::string& leanTopic);
+   std::string leanTopic(const std::string& fullTopic);
 
    static void mosquittoConnectCallback(struct mosquitto* mosq, void* userdata,
                                         int result);

@@ -98,11 +98,21 @@ void MqttClient::setCallback(MqttCallback& cb)
                                   &MqttClient::mosquittoPublishCallback);
 }
 
-std::string MqttClient::fullTopic(const std::string& topic)
+std::string MqttClient::fullTopic(const std::string& lean_topic)
 {
-   return m_topic_prefix.empty() ? topic
-          : topic.empty()        ? m_topic_prefix
-                                 : m_topic_prefix + '/' + topic;
+   return m_topic_prefix.empty() ? lean_topic
+          : lean_topic.empty()   ? m_topic_prefix
+                                 : m_topic_prefix + '/' + lean_topic;
+}
+
+std::string MqttClient::leanTopic(const std::string& full_topic)
+{
+   if (!m_topic_prefix.empty() && full_topic.find(m_topic_prefix + "/") == 0)
+   {
+      return full_topic.substr(m_topic_prefix.size() + 1);
+   }
+
+   return full_topic;
 }
 
 void MqttClient::mosquittoConnectCallback(struct mosquitto*, void* userdata, int result)
@@ -128,9 +138,9 @@ void MqttClient::mosquittoMessageCallback(struct mosquitto*, void* userdata,
    if (client->m_callback)
    {
       client->m_callback->messageArrived(
-         message->topic, message->payload
-                            ? std::string{reinterpret_cast<char*>(message->payload)}
-                            : std::string{});
+         client->leanTopic(message->topic),
+         message->payload ? std::string{reinterpret_cast<char*>(message->payload)}
+                          : std::string{});
    }
 }
 
