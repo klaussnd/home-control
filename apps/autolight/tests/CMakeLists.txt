@@ -13,6 +13,3 @@ target_link_libraries(tests_unit
       gmock
       libconfig::libconfig
 )
-
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../example.cfg
-    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
