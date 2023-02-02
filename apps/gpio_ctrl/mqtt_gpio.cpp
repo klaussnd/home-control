@@ -5,9 +5,14 @@
 #include <iostream>
 
 GpioMqttCallback::GpioMqttCallback(MqttClient& mqtt_client, gpiod::chip& chip,
+                                   const std::string& topic_suffix,
                                    const std::vector<GpioSetting>& settings)
       : m_client(mqtt_client)
 {
+   if (!topic_suffix.empty())
+   {
+      m_topic_suffix = '/' + topic_suffix;
+   }
    const std::string app_name{"gpio_ctrl"};
    for (const auto& gpio : settings)
    {
@@ -33,11 +38,11 @@ void GpioMqttCallback::connected()
 
 void GpioMqttCallback::messageArrived(const std::string& topic, const std::string& value)
 {
-   auto it =
-      std::find_if(m_channels.begin(), m_channels.end(), [&topic](const auto& channel) {
-         const std::string expected_topic = channel.name + '/' + "cmnd/POWER";
-         return expected_topic == topic;
-      });
+   auto it = std::find_if(m_channels.begin(), m_channels.end(),
+                          [&topic, &suffix = m_topic_suffix](const auto& channel) {
+                             const std::string expected_topic = channel.name + suffix;
+                             return expected_topic == topic;
+                          });
    if (it != m_channels.end())
    {
       const bool ison = value == "ON";

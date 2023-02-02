@@ -12,6 +12,7 @@ TEST(ASettingsReader, readsExampleFile)
 
    ASSERT_THAT(settings.mqtt_host, StrEq("mybroker-hostname"));
    ASSERT_THAT(settings.mqtt_topic_base, StrEq("home/room"));
+   ASSERT_THAT(settings.mqtt_topic_suffix, StrEq("cmnd/POWER"));
    ASSERT_THAT(settings.gpio_chip, StrEq("gpiochip1"));
 
    ASSERT_THAT(settings.gpios, SizeIs(2));

@@ -17,6 +17,8 @@ Settings readSettings(const std::string& path)
       Settings settings;
       settings.mqtt_host = static_cast<std::string>(conf.lookup("MQTT.host"));
       settings.mqtt_topic_base = static_cast<std::string>(conf.lookup("MQTT.topic_base"));
+      settings.mqtt_topic_suffix =
+         static_cast<std::string>(conf.lookup("MQTT.topic_suffix"));
 
       settings.gpio_chip = static_cast<std::string>(conf.lookup("GPIO_chip"));
 

@@ -13,6 +13,7 @@ struct Settings
 {
    std::string mqtt_host;
    std::string mqtt_topic_base;
+   std::string mqtt_topic_suffix;
    std::string gpio_chip;
    std::vector<GpioSetting> gpios;
 };

@@ -32,7 +32,8 @@ int main(void)
 
       MqttClient mqtt{MqttClientSettings{
          settings.mqtt_host, {}, {}, "gpio-ctrl", settings.mqtt_topic_base}};
-      GpioMqttCallback callback(mqtt, gpio_chip, settings.gpios);
+      GpioMqttCallback callback(mqtt, gpio_chip, settings.mqtt_topic_suffix,
+                                settings.gpios);
       mqtt.setCallback(callback);
       mqtt.connectWait();
       std::cout << "Connected to MQTT server " << settings.mqtt_host << std::endl;
