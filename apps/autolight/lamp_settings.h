@@ -3,6 +3,7 @@
 #include "bitmask.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,12 +20,21 @@ enum class Weekday
 
 ENABLE_BITMASK(Weekday);
 
+struct RandomLampTime
+{
+   unsigned int count;
+   // time in minutes
+   unsigned int average_length;
+   unsigned int length_stddev;
+};
+
 struct LampTime
 {
    Weekday weekday;
    // times in minutes since the beginning of the day
    unsigned int on;
    unsigned int off;
+   std::optional<RandomLampTime> random;
 };
 
 struct LampSettings

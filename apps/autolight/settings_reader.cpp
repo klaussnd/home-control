@@ -66,6 +66,29 @@ Settings readSettings(const std::string& path)
             timing.weekday = parseWeekdays(schedule_item.lookup("weekdays"));
             timing.on = parseTime(schedule_item.lookup("on"));
             timing.off = parseTime(schedule_item.lookup("off"));
+            if (schedule_item.exists("random"))
+            {
+               const auto& conf_random = schedule_item.lookup("random");
+               if (conf_random.getType() != libconfig::Setting::TypeGroup)
+               {
+                  throw std::runtime_error("Error near line "
+                                           + std::to_string(conf_random.getSourceLine())
+                                           + ": 'random' must be a group");
+               }
+               RandomLampTime random;
+               random.count = static_cast<unsigned int>(conf_random.lookup("count"));
+               if (random.count == 0)
+               {
+                  throw std::runtime_error("Error near line "
+                                           + std::to_string(conf_random.getSourceLine())
+                                           + ": random count must be > 0");
+               }
+               random.average_length =
+                  static_cast<unsigned int>(conf_random.lookup("average_length"));
+               random.length_stddev =
+                  static_cast<unsigned int>(conf_random.lookup("length_stddev"));
+               timing.random = random;
+            }
             lamp_settings.timings.push_back(std::move(timing));
          }
 
@@ -79,7 +102,7 @@ Settings readSettings(const std::string& path)
       throw std::runtime_error("Error parsing configuration file '" + path + "' line "
                                + std::to_string(ex.getLine()) + ": " + ex.getError());
    }
-   catch (libconfig::FileIOException& ex)
+   catch (libconfig::FileIOException&)
    {
       throw std::runtime_error("Configuration file '" + path + "' not found.");
    }

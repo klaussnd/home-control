@@ -15,7 +15,7 @@ LampSettings makeSettings()
    settings.topic = {"test/topic"};
    settings.ambient_light_threshold = 900.0f;
    settings.ambient_light_hysteresis = 5.0f;
-   settings.timings = {{Weekday::SUNDAY, 8 * 60, 10 * 60}};
+   settings.timings = {{Weekday::SUNDAY, 8 * 60, 10 * 60, {}}};
    return settings;
 }
 

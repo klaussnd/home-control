@@ -5,6 +5,8 @@
 
 using namespace testing;
 
+bool operator==(const RandomLampTime& lhs, const RandomLampTime& rhs);
+
 TEST(ASettingsReader, readsExampleFile)
 {
    const std::string settings_file = "example.cfg";
@@ -13,7 +15,7 @@ TEST(ASettingsReader, readsExampleFile)
 
    ASSERT_THAT(settings.mqtt_host, StrEq("mybroker-hostname"));
    ASSERT_THAT(settings.ambient_light_topic, StrEq("home/light"));
-   ASSERT_THAT(settings.lamps, SizeIs(2));
+   ASSERT_THAT(settings.lamps, SizeIs(3));
 
    {
       const auto& lamp1 = settings.lamps[0];
@@ -27,9 +29,11 @@ TEST(ASettingsReader, readsExampleFile)
                      | Weekday::THURSDAY | Weekday::FRIDAY));
       ASSERT_THAT(lamp1.timings[0].on, Eq(5 * 60 + 30));
       ASSERT_THAT(lamp1.timings[0].off, Eq(22 * 60));
+      ASSERT_THAT(lamp1.timings[0].random, Eq(std::nullopt));
       ASSERT_THAT(lamp1.timings[1].weekday, Eq(Weekday::SATURDAY | Weekday::SUNDAY));
       ASSERT_THAT(lamp1.timings[1].on, Eq(6 * 60));
       ASSERT_THAT(lamp1.timings[1].off, Eq(23 * 60));
+      ASSERT_THAT(lamp1.timings[1].random, Eq(std::nullopt));
    }
    {
       const auto& lamp2 = settings.lamps[1];
@@ -41,10 +45,32 @@ TEST(ASettingsReader, readsExampleFile)
       ASSERT_THAT(lamp2.timings[0].weekday, Eq(Weekday::THURSDAY | Weekday::SATURDAY));
       ASSERT_THAT(lamp2.timings[0].on, Eq(7 * 60 + 15));
       ASSERT_THAT(lamp2.timings[0].off, Eq(22 * 60));
+      ASSERT_THAT(lamp2.timings[0].random, Eq(std::nullopt));
+   }
+   {
+      const auto& lamp3 = settings.lamps[2];
+      ASSERT_THAT(lamp3.name, StrEq("kitchen"));
+      ASSERT_THAT(lamp3.topic, ElementsAre(StrEq("home/kitchen/cmnd/POWER")));
+      ASSERT_THAT(lamp3.ambient_light_threshold, FloatEq(960.0f));
+      ASSERT_THAT(lamp3.ambient_light_hysteresis, FloatEq(7.0f));
+      ASSERT_THAT(lamp3.timings, SizeIs(1));
+      ASSERT_THAT(
+         lamp3.timings[0].weekday,
+         Eq(Weekday::MONDAY | Weekday::TUESDAY | Weekday::WEDNESDAY | Weekday::THURSDAY
+            | Weekday::FRIDAY | Weekday::SATURDAY | Weekday::SUNDAY));
+      ASSERT_THAT(lamp3.timings[0].on, Eq(6 * 60));
+      ASSERT_THAT(lamp3.timings[0].off, Eq(22 * 60));
+      ASSERT_THAT(lamp3.timings[0].random, Optional(RandomLampTime{2, 40, 20}));
    }
 }
 
 TEST(ASettingsReader, throwsIfNonExistentFile)
 {
    ASSERT_THROW(readSettings("/non/existing/file"), std::runtime_error);
+}
+
+bool operator==(const RandomLampTime& lhs, const RandomLampTime& rhs)
+{
+   return lhs.count == rhs.count && lhs.average_length == rhs.average_length
+          && lhs.length_stddev == rhs.length_stddev;
 }
