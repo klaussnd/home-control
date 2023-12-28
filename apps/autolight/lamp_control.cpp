@@ -1,27 +1,29 @@
 #include "lamp_control.h"
 
+#include <cassert>
+#include <cmath>
 #include <stdexcept>
 
-void handleLamp(std::time_t time, float ambientlight, const LampSettings& settings,
-                LampState& previous_state, std::function<void(bool)> switch_function)
+namespace
 {
-   const bool nominal_state =
-      shouldLampBeOn(time, ambientlight, previous_state, settings);
-   if (previous_state == LampState::UNKNOWN || nominal_state != toBool(previous_state))
-   {
-      switch_function(nominal_state);
-      previous_state = fromBool(nominal_state);
-   }
+template <typename T>
+bool matchesTime(const T& timing, unsigned int minute_of_day);
 }
 
-bool shouldLampBeOn(std::time_t time, float ambientlight, LampState previous_state,
-                    const LampSettings& lamp_settings)
+void handleLamp(std::time_t time, float ambientlight, const LampSettings& settings,
+                LampInfo& status, std::mt19937& ran_gen,
+                std::function<void(bool)> switch_function)
 {
    const bool ison_by_ambientlight = shouldBeOnByAmbientLight(
-      ambientlight, previous_state, lamp_settings.ambient_light_threshold,
-      lamp_settings.ambient_light_hysteresis);
-   const bool ison_by_time = shouldBeOnByTime(time, lamp_settings.timings);
-   return ison_by_ambientlight && ison_by_time;
+      ambientlight, status.state, settings.ambient_light_threshold,
+      settings.ambient_light_hysteresis);
+   const bool ison_by_time = shouldBeOnByTime(time, settings.timings, status, ran_gen);
+   const bool nominal_state = ison_by_ambientlight && ison_by_time;
+   if (status.state == LampState::UNKNOWN || nominal_state != toBool(status.state))
+   {
+      switch_function(nominal_state);
+      status.state = fromBool(nominal_state);
+   }
 }
 
 bool shouldBeOnByAmbientLight(float ambientlight, LampState previous_state,
@@ -39,7 +41,8 @@ bool shouldBeOnByAmbientLight(float ambientlight, LampState previous_state,
    return ambientlight <= ambient_light_threshold;
 }
 
-bool shouldBeOnByTime(std::time_t time, const std::vector<LampTime>& timings)
+bool shouldBeOnByTime(std::time_t time, const std::vector<LampTime>& timings,
+                      LampInfo& status, std::mt19937& ran_gen)
 {
    struct tm tm;
    localtime_r(&time, &tm);
@@ -49,12 +52,64 @@ bool shouldBeOnByTime(std::time_t time, const std::vector<LampTime>& timings)
    {
       const bool matches_weekday =
          static_cast<bool>(timing.weekday & getWeekday(tm.tm_wday));
-      if (matches_weekday && minute_of_day >= timing.on && minute_of_day <= timing.off)
+      if (matches_weekday && timing.random.has_value()
+          && status.day_for_random != static_cast<unsigned int>(tm.tm_yday))
       {
-         return true;
+         status.random_times = initialiseRandomTimes(timing, ran_gen);
+         status.day_for_random = static_cast<unsigned int>(tm.tm_yday);
+      }
+
+      if (matches_weekday && matchesTime(timing, minute_of_day))
+      {
+         if (!timing.random.has_value())
+         {
+            return true;
+         }
+         for (const auto& random_timing : status.random_times)
+         {
+            if (matchesTime(random_timing, minute_of_day))
+            {
+               return true;
+            }
+         }
       }
    }
    return false;
+}
+
+std::vector<OnOffTime> initialiseRandomTimes(const LampTime& timing,
+                                             std::mt19937& ran_gen)
+{
+   assert(timing.random.has_value());
+   assert(timing.random->count > 0);
+
+   std::vector<unsigned int> lengths(timing.random->count);
+   std::normal_distribution<float> length_dist(timing.random->average_length,
+                                               timing.random->length_stddev);
+   unsigned int sum_length = 0;
+   for (auto& length : lengths)
+   {
+      length = static_cast<unsigned int>(std::round(length_dist(ran_gen)));
+      sum_length += length;
+   }
+
+   const unsigned int nominal_on_length = timing.off - timing.on;
+   const unsigned int off_time =
+      nominal_on_length > sum_length ? nominal_on_length - sum_length : nominal_on_length;
+   const unsigned int max_length = off_time / std::max(1u, timing.random->count - 1u);
+   std::uniform_int_distribution<unsigned int> wait_dist(2u, std::max(15u, max_length));
+
+   std::vector<OnOffTime> result(timing.random->count);
+   unsigned int start = timing.on;
+   for (unsigned int index = 0; index < timing.random->count; ++index)
+   {
+      auto& item = result[index];
+      item.on = start + wait_dist(ran_gen);
+      item.off = item.on + lengths[index];
+      start = item.off;
+   }
+
+   return result;
 }
 
 Weekday getWeekday(int wday)
@@ -98,3 +153,12 @@ LampState fromBool(bool state)
 {
    return state ? LampState::ON : LampState::OFF;
 }
+
+namespace
+{
+template <typename T>
+bool matchesTime(const T& timing, unsigned int minute_of_day)
+{
+   return minute_of_day >= timing.on && minute_of_day <= timing.off;
+}
+}  // namespace

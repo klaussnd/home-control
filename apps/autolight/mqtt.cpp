@@ -1,5 +1,7 @@
 #include "mqtt.h"
 
+#include <mqttbase/helper.h>
+
 #include <iostream>
 
 AmbientLightMqttCallback::AmbientLightMqttCallback(MqttClient& mqtt_client,
@@ -34,7 +36,8 @@ void AmbientLightMqttCallback::messageArrived(const std::string& topic,
    {
       m_light = std::stof(value);
       m_has_value = true;
-      std::cout << "Received ambient light " << m_light << std::endl;
+      std::cout << timeToString(std::time(nullptr)) << " Received ambient light "
+                << m_light << std::endl;
    }
 }
 

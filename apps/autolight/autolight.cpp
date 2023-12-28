@@ -10,6 +10,7 @@
 #include <ctime>
 #include <iostream>
 #include <optional>
+#include <random>
 #include <thread>
 
 volatile bool run = true;
@@ -38,9 +39,11 @@ int main(void)
       AmbientLightMqttCallback ambient_light(mqtt, settings.ambient_light_topic);
       mqtt.setCallback(ambient_light);
       mqtt.connectWait();
-      std::cout << "Connected to MQTT server " << settings.mqtt_host << std::endl;
+      std::cout << timeToString(std::time(nullptr)) << " Connected to MQTT server "
+                << settings.mqtt_host << std::endl;
 
-      std::vector<LampState> lamp_state(settings.lamps.size(), LampState::UNKNOWN);
+      std::vector<LampInfo> lamp_status(settings.lamps.size());
+      std::mt19937 ran_gen;
 
       while (run)
       {
@@ -50,14 +53,16 @@ int main(void)
             for (std::size_t index = 0; index < settings.lamps.size(); ++index)
             {
                const auto& lamp_settings = settings.lamps[index];
-               auto& old_state = lamp_state[index];
                handleLamp(time, ambient_light.ambientLight().value(), lamp_settings,
-                          old_state, [&mqtt, &lamp_settings](bool ison) {
+                          lamp_status[index], ran_gen,
+                          [&mqtt, &lamp_settings, time](bool ison)
+                          {
                              for (const auto& topic : lamp_settings.topic)
                              {
                                 switchLamp(mqtt, topic, ison);
                              }
-                             std::cout << "Switching " << lamp_settings.name << ' '
+                             std::cout << timeToString(time) << " switching "
+                                       << lamp_settings.name << ' '
                                        << (ison ? "on" : "off") << std::endl;
                           });
             }
@@ -70,7 +75,7 @@ int main(void)
             {
                std::cout << "Re-reading configuration ... " << std::flush;
                settings = readSettings(settingsFile);
-               lamp_state.resize(settings.lamps.size(), LampState::UNKNOWN);
+               lamp_status.resize(settings.lamps.size());
                std::cout << "done" << std::endl;
             }
             catch (const std::exception& err)

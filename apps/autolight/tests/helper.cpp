@@ -31,6 +31,13 @@ std::time_t makeTime(Weekday weekday, int hour, int minute)
    return std::mktime(&tm);
 }
 
+int getYearDay(std::time_t time)
+{
+   struct tm tm;
+   localtime_r(&time, &tm);
+   return tm.tm_yday;
+}
+
 namespace
 {
 int getWeekday(Weekday weekday)
