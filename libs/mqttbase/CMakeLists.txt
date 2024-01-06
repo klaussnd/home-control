@@ -2,6 +2,7 @@
 add_library(mqttbase STATIC
    include/mqttbase/MqttClient.h
    include/mqttbase/MqttCallback.h
+   include/mqttbase/MultiMqttCallback.h
    include/mqttbase/helper.h
    src/MqttClient.cpp
    src/helper.cpp
