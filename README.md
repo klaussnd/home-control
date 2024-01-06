@@ -15,6 +15,15 @@ The intended logic is achieved as follows:
 * If the measured ambient sunlight raises above a given threshold, or the time goes outside the "on" period, the lamp is switched off.
 * Hysteresis is used to bypass measurement noise.
 
+Optionally there is the possibility to randomly switch lights to simulate presence while being on holiday.
+For each light, you configure the average presence time and its variance, and the number of times you are there.
+The presence time is drawn from a normal distribution with the given mean and variance.
+The time between subsequent presence periods is drawn from a uniform distribution. This simulates your presence in a given room.
+Then the light is switched on if the ambient light is below the configured threshold during the random presence time.
+It can happen that a presence time period is competely during the light day, in which case the light is not switched on,
+while the light could be switched on during the day if it gets very dark outside, e.g. during a thunderstorm,
+just as if you would do if you would be physically present in the given room.
+
 ## Control GPIOs via MQTT
 
 `gpio_ctrl` switches GPIOs based on MQTT messages. It allows you to use the GPIOs of your single-board computer to control lamps or other devices. A configuration file is used to define the GPIOs and MQTT topics; an example file can be found [here](apps/gpio_ctrl/example.cfg). The topic can be configured to be compatible with [Tasmota](https://tasmota.github.io/docs/MQTT/#command-flow); the payload is assumed to be `ON` or `OFF`. The user which runs the app must have read-write access to the respective `/dev/gpiochip?` device, which typically requires the user to be a member of the group `gpio`; running as root is not recomended.
