@@ -51,6 +51,10 @@ public:
    {
       publish(topic, std::to_string(value));
    }
+   void publish(const std::string& topic)  ///< without value
+   {
+      publish(topic, std::string{});
+   }
 
    void subscribe(const std::string& topic);
 
