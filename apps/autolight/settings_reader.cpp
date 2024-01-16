@@ -9,6 +9,8 @@
 
 namespace
 {
+LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hysteresis);
+LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item);
 Weekday parseWeekdays(const libconfig::Setting& conf);
 unsigned int parseTime(const libconfig::Setting& conf);
 }  // namespace
@@ -36,63 +38,7 @@ Settings readSettings(const std::string& path)
       }
       for (const auto& conf_lamp : conf_lamps)
       {
-         LampSettings lamp_settings;
-         lamp_settings.name = static_cast<std::string>(conf_lamp.lookup("name"));
-         const auto& conf_topic = conf_lamp.lookup("mqtt_topic");
-         if (conf_topic.getType() != libconfig::Setting::TypeList)
-         {
-            throw std::runtime_error("Error near line "
-                                     + std::to_string(conf_topic.getSourceLine())
-                                     + ": 'mqtt_topic' must be a list");
-         }
-         for (const auto& topic : conf_topic)
-         {
-            lamp_settings.topic.push_back(static_cast<std::string>(topic));
-         }
-         lamp_settings.ambient_light_threshold =
-            static_cast<float>(conf_lamp.lookup("ambientlight_threshold"));
-         lamp_settings.ambient_light_hysteresis = hysteresis;
-
-         const auto& conf_schedule = conf_lamp.lookup("schedule");
-         if (conf_schedule.getType() != libconfig::Setting::TypeList)
-         {
-            throw std::runtime_error("Error near line "
-                                     + std::to_string(conf_schedule.getSourceLine())
-                                     + ": 'schedule' must be a list");
-         }
-         for (const auto& schedule_item : conf_schedule)
-         {
-            LampTime timing;
-            timing.weekday = parseWeekdays(schedule_item.lookup("weekdays"));
-            timing.on = parseTime(schedule_item.lookup("on"));
-            timing.off = parseTime(schedule_item.lookup("off"));
-            if (schedule_item.exists("random"))
-            {
-               const auto& conf_random = schedule_item.lookup("random");
-               if (conf_random.getType() != libconfig::Setting::TypeGroup)
-               {
-                  throw std::runtime_error("Error near line "
-                                           + std::to_string(conf_random.getSourceLine())
-                                           + ": 'random' must be a group");
-               }
-               RandomLampTime random;
-               random.count = static_cast<unsigned int>(conf_random.lookup("count"));
-               if (random.count == 0)
-               {
-                  throw std::runtime_error("Error near line "
-                                           + std::to_string(conf_random.getSourceLine())
-                                           + ": random count must be > 0");
-               }
-               random.average_length =
-                  static_cast<unsigned int>(conf_random.lookup("average_length"));
-               random.length_stddev =
-                  static_cast<unsigned int>(conf_random.lookup("length_stddev"));
-               timing.random = random;
-            }
-            lamp_settings.timings.push_back(std::move(timing));
-         }
-
-         settings.lamps.push_back(std::move(lamp_settings));
+         settings.lamps.push_back(parseLampSettings(conf_lamp, hysteresis));
       }
 
       return settings;
@@ -120,6 +66,73 @@ Settings readSettings(const std::string& path)
 namespace
 {
 Weekday parseWeekday(const std::string& s);
+
+LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hysteresis)
+{
+   LampSettings lamp_settings;
+   lamp_settings.name = static_cast<std::string>(conf_lamp.lookup("name"));
+   const auto& conf_topic = conf_lamp.lookup("mqtt_topic");
+   if (conf_topic.getType() != libconfig::Setting::TypeList)
+   {
+      throw std::runtime_error("Error near line "
+                               + std::to_string(conf_topic.getSourceLine())
+                               + ": 'mqtt_topic' must be a list");
+   }
+   for (const auto& topic : conf_topic)
+   {
+      lamp_settings.topic.push_back(static_cast<std::string>(topic));
+   }
+   lamp_settings.ambient_light_threshold =
+      static_cast<float>(conf_lamp.lookup("ambientlight_threshold"));
+   lamp_settings.ambient_light_hysteresis = hysteresis;
+
+   const auto& conf_schedule = conf_lamp.lookup("schedule");
+   if (conf_schedule.getType() != libconfig::Setting::TypeList)
+   {
+      throw std::runtime_error("Error near line "
+                               + std::to_string(conf_schedule.getSourceLine())
+                               + ": 'schedule' must be a list");
+   }
+   for (const auto& conf_schedule_item : conf_schedule)
+   {
+      lamp_settings.timings.push_back(std::move(parseLampTiming(conf_schedule_item)));
+   }
+
+   return lamp_settings;
+}
+
+LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item)
+{
+   LampTime timing;
+   timing.weekday = parseWeekdays(conf_schedule_item.lookup("weekdays"));
+   timing.on = parseTime(conf_schedule_item.lookup("on"));
+   timing.off = parseTime(conf_schedule_item.lookup("off"));
+   if (conf_schedule_item.exists("random"))
+   {
+      const auto& conf_random = conf_schedule_item.lookup("random");
+      if (conf_random.getType() != libconfig::Setting::TypeGroup)
+      {
+         throw std::runtime_error("Error near line "
+                                  + std::to_string(conf_random.getSourceLine())
+                                  + ": 'random' must be a group");
+      }
+      RandomLampTime random;
+      random.count = static_cast<unsigned int>(conf_random.lookup("count"));
+      if (random.count == 0)
+      {
+         throw std::runtime_error("Error near line "
+                                  + std::to_string(conf_random.getSourceLine())
+                                  + ": random count must be > 0");
+      }
+      random.average_length =
+         static_cast<unsigned int>(conf_random.lookup("average_length"));
+      random.length_stddev =
+         static_cast<unsigned int>(conf_random.lookup("length_stddev"));
+      timing.random = random;
+   }
+
+   return timing;
+}
 
 Weekday parseWeekdays(const libconfig::Setting& conf)
 {
