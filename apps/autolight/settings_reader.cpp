@@ -9,6 +9,8 @@
 
 namespace
 {
+std::unordered_map<std::string, std::string> parseMotionDetectors(
+   const libconfig::Setting& conf);
 LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hysteresis);
 LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item);
 Weekday parseWeekdays(const libconfig::Setting& conf);
@@ -28,6 +30,11 @@ Settings readSettings(const std::string& path)
       settings.ambient_light_topic =
          static_cast<std::string>(conf.lookup("ambientlight.topic"));
       const float hysteresis = static_cast<float>(conf.lookup("ambientlight.hysteresis"));
+      if (conf.exists("motion_detectors"))
+      {
+         settings.motion_detectors =
+            parseMotionDetectors(conf.lookup("motion_detectors"));
+      }
 
       const auto& conf_lamps = conf.lookup("lamps");
       if (conf_lamps.getType() != libconfig::Setting::TypeList)
@@ -67,6 +74,26 @@ namespace
 {
 Weekday parseWeekday(const std::string& s);
 
+std::unordered_map<std::string, std::string> parseMotionDetectors(
+   const libconfig::Setting& conf)
+{
+   if (conf.getType() != libconfig::Setting::TypeList)
+   {
+      throw std::runtime_error("Error near line " + std::to_string(conf.getSourceLine())
+                               + ": 'motion_detectors' must be a list");
+   }
+
+   std::unordered_map<std::string, std::string> motion_detectors;
+   for (const auto& item : conf)
+   {
+      std::string name = static_cast<std::string>(item.lookup("name"));
+      std::string topic = static_cast<std::string>(item.lookup("topic"));
+      motion_detectors.insert(std::make_pair(std::move(topic), std::move(name)));
+   }
+
+   return motion_detectors;
+}
+
 LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hysteresis)
 {
    LampSettings lamp_settings;
@@ -98,6 +125,21 @@ LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hyster
       lamp_settings.timings.push_back(std::move(parseLampTiming(conf_schedule_item)));
    }
 
+   if (conf_lamp.exists("motion"))
+   {
+      const auto& conf_motion = conf_lamp.lookup("motion");
+      if (conf_motion.getType() != libconfig::Setting::TypeGroup)
+      {
+         throw std::runtime_error("Error near line "
+                                  + std::to_string(conf_motion.getSourceLine())
+                                  + ": 'motion' must be a group");
+      }
+      MotionDetectorSettings motion;
+      motion.detector_name = static_cast<std::string>(conf_motion.lookup("detector"));
+      motion.on_time = static_cast<unsigned int>(conf_motion.lookup("on_time"));
+      lamp_settings.motion = std::move(motion);
+   }
+
    return lamp_settings;
 }
 
@@ -107,6 +149,7 @@ LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item)
    timing.weekday = parseWeekdays(conf_schedule_item.lookup("weekdays"));
    timing.on = parseTime(conf_schedule_item.lookup("on"));
    timing.off = parseTime(conf_schedule_item.lookup("off"));
+
    if (conf_schedule_item.exists("random"))
    {
       const auto& conf_random = conf_schedule_item.lookup("random");
@@ -128,7 +171,7 @@ LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item)
          static_cast<unsigned int>(conf_random.lookup("average_length"));
       random.length_stddev =
          static_cast<unsigned int>(conf_random.lookup("length_stddev"));
-      timing.random = random;
+      timing.random = std::move(random);
    }
 
    return timing;

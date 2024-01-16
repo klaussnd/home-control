@@ -6,6 +6,7 @@
 using namespace testing;
 
 bool operator==(const RandomLampTime& lhs, const RandomLampTime& rhs);
+bool operator==(const MotionDetectorSettings& lhs, const MotionDetectorSettings& rhs);
 
 TEST(ASettingsReader, readsExampleFile)
 {
@@ -15,8 +16,11 @@ TEST(ASettingsReader, readsExampleFile)
 
    ASSERT_THAT(settings.mqtt_host, StrEq("mybroker-hostname"));
    ASSERT_THAT(settings.ambient_light_topic, StrEq("home/light"));
-   ASSERT_THAT(settings.lamps, SizeIs(3));
+   ASSERT_THAT(settings.motion_detectors,
+               UnorderedElementsAre(Pair("home/yard/motion", "yard"),
+                                    Pair("home/frontdoor/motion", "door")));
 
+   ASSERT_THAT(settings.lamps, SizeIs(3));
    {
       const auto& lamp1 = settings.lamps[0];
       ASSERT_THAT(lamp1.name, StrEq("stairs"));
@@ -34,6 +38,7 @@ TEST(ASettingsReader, readsExampleFile)
       ASSERT_THAT(lamp1.timings[1].on, Eq(6 * 60));
       ASSERT_THAT(lamp1.timings[1].off, Eq(23 * 60));
       ASSERT_THAT(lamp1.timings[1].random, Eq(std::nullopt));
+      ASSERT_THAT(lamp1.motion, Eq(std::nullopt));
    }
    {
       const auto& lamp2 = settings.lamps[1];
@@ -46,6 +51,7 @@ TEST(ASettingsReader, readsExampleFile)
       ASSERT_THAT(lamp2.timings[0].on, Eq(7 * 60 + 15));
       ASSERT_THAT(lamp2.timings[0].off, Eq(22 * 60));
       ASSERT_THAT(lamp2.timings[0].random, Eq(std::nullopt));
+      ASSERT_THAT(lamp2.motion, Optional(MotionDetectorSettings{"yard", 10u}));
    }
    {
       const auto& lamp3 = settings.lamps[2];
@@ -61,6 +67,7 @@ TEST(ASettingsReader, readsExampleFile)
       ASSERT_THAT(lamp3.timings[0].on, Eq(6 * 60));
       ASSERT_THAT(lamp3.timings[0].off, Eq(22 * 60));
       ASSERT_THAT(lamp3.timings[0].random, Optional(RandomLampTime{2, 40, 20}));
+      ASSERT_THAT(lamp3.motion, Eq(std::nullopt));
    }
 }
 
@@ -73,4 +80,9 @@ bool operator==(const RandomLampTime& lhs, const RandomLampTime& rhs)
 {
    return lhs.count == rhs.count && lhs.average_length == rhs.average_length
           && lhs.length_stddev == rhs.length_stddev;
+}
+
+bool operator==(const MotionDetectorSettings& lhs, const MotionDetectorSettings& rhs)
+{
+   return lhs.detector_name == rhs.detector_name && lhs.on_time == rhs.on_time;
 }

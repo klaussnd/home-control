@@ -28,6 +28,12 @@ struct RandomLampTime
    unsigned int length_stddev;
 };
 
+struct MotionDetectorSettings
+{
+   std::string detector_name;
+   unsigned int on_time;
+};
+
 struct LampTime
 {
    Weekday weekday;
@@ -44,4 +50,5 @@ struct LampSettings
    float ambient_light_threshold;
    float ambient_light_hysteresis;
    std::vector<LampTime> timings;
+   std::optional<MotionDetectorSettings> motion;
 };
