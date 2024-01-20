@@ -35,14 +35,18 @@ struct LampInfo
  *  When a lamp switches its state (from on to off or vice versa), @e switch_function
  *  is called. The @e status is updated.
  */
-void handleLamp(std::time_t time, float ambientlight, const LampSettings& settings,
-                LampInfo& status, std::mt19937& ran_gen,
+void handleLamp(std::time_t time, float ambientlight,
+                const std::optional<std::time_t>& last_motion_detector_time,
+                const LampSettings& settings, LampInfo& status, std::mt19937& ran_gen,
                 std::function<void(bool)> switch_function);
 bool shouldBeOnByAmbientLight(float ambientlight, LampState previous_state,
                               float ambient_light_threshold,
                               float ambient_light_hysteresis);
 bool shouldBeOnByTime(std::time_t time, const std::vector<LampTime>& timings,
                       LampInfo& status, std::mt19937& ran_gen);
+bool shouldBeOnByMotionDetector(std::time_t time,
+                                const std::optional<MotionDetectorSettings>& settings,
+                                const std::optional<std::time_t>& motion_trigger_time);
 
 std::vector<OnOffTime> initialiseRandomTimes(const LampTime& timing,
                                              std::mt19937& ran_gen);

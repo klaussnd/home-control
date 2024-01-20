@@ -38,7 +38,7 @@ TEST_F(AnOutput, turnsOnWhenAmbientLightFallsBelowThresholdMinusHysteresis)
                               - m_lamp_settings.ambient_light_hysteresis - 1.0f;
    LampInfo previous_state{LampState::OFF, 0, {}};
 
-   handleLamp(on_time, ambientlight, m_lamp_settings, previous_state, m_ran_gen,
+   handleLamp(on_time, ambientlight, {}, m_lamp_settings, previous_state, m_ran_gen,
               [&mock = m_mock](bool ison) { mock.set(ison); });
 
    EXPECT_THAT(previous_state.state, Eq(LampState::ON));
@@ -54,7 +54,7 @@ TEST_F(AnOutput, doesNotTurnOnAgainWhenAmbientLightIsBelowThresholdAndLightIsAlr
                               - m_lamp_settings.ambient_light_hysteresis - 1.0f;
    LampInfo previous_state{LampState::ON, 0, {}};
 
-   handleLamp(on_time, ambientlight, m_lamp_settings, previous_state, m_ran_gen,
+   handleLamp(on_time, ambientlight, {}, m_lamp_settings, previous_state, m_ran_gen,
               [&mock = m_mock](bool ison) { mock.set(ison); });
 
    EXPECT_THAT(previous_state.state, Eq(LampState::ON));
@@ -69,7 +69,7 @@ TEST_F(AnOutput, turnsOffWhenAmbientLightFallsAboveThresholdPlusHysteresis)
                               + m_lamp_settings.ambient_light_hysteresis + 1;
    LampInfo previous_state{LampState::ON, 0, {}};
 
-   handleLamp(on_time, ambientlight, m_lamp_settings, previous_state, m_ran_gen,
+   handleLamp(on_time, ambientlight, {}, m_lamp_settings, previous_state, m_ran_gen,
               [&mock = m_mock](bool ison) { mock.set(ison); });
 
    EXPECT_THAT(previous_state.state, Eq(LampState::OFF));

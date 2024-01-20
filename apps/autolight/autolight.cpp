@@ -2,6 +2,7 @@
 #include "mqtt.h"
 #include "settings_reader.h"
 #include <mqttbase/MqttClient.h>
+#include <mqttbase/MultiMqttCallback.h>
 #include <mqttbase/helper.h>
 
 #include <cerrno>
@@ -36,8 +37,10 @@ int main(void)
       auto settings = readSettings(settingsFile);
       MqttClient mqtt{
          MqttClientSettings{settings.mqtt_host, {}, {}, "lightcontroller", ""}};
-      AmbientLightMqttCallback ambient_light(mqtt, settings.ambient_light_topic);
-      mqtt.setCallback(ambient_light);
+      AmbientLightMqttCallback ambient_light{mqtt, settings.ambient_light_topic};
+      MotionDetectorMqttCallback motion_detector{mqtt, settings.motion_detectors};
+      MultiMqttCallback<2> callback{ambient_light, motion_detector};
+      mqtt.setCallback(callback);
       mqtt.connectWait();
       std::cout << timeToString(std::time(nullptr)) << " Connected to MQTT server "
                 << settings.mqtt_host << std::endl;
@@ -53,8 +56,12 @@ int main(void)
             for (std::size_t index = 0; index < settings.lamps.size(); ++index)
             {
                const auto& lamp_settings = settings.lamps[index];
-               handleLamp(time, ambient_light.ambientLight().value(), lamp_settings,
-                          lamp_status[index], ran_gen,
+               handleLamp(time, ambient_light.ambientLight().value(),
+                          lamp_settings.motion.has_value()
+                             ? motion_detector.lastDetectionTime(
+                                lamp_settings.motion.value().detector_name)
+                             : std::nullopt,
+                          lamp_settings, lamp_status[index], ran_gen,
                           [&mqtt, &lamp_settings, time](bool ison)
                           {
                              for (const auto& topic : lamp_settings.topic)

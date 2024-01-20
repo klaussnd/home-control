@@ -34,6 +34,7 @@ TEST_F(OnByAmbientLight, isOnWhenAboveThresholdButBelowHysteresisWithPreviousOn)
 {
    const float lightAboveThresholdBelowHystsresis =
       m_lamp_settings.ambient_light_threshold + 1.0f;
+
    EXPECT_THAT(shouldBeOnByAmbientLight(lightAboveThresholdBelowHystsresis, LampState::ON,
                                         m_lamp_settings.ambient_light_threshold,
                                         m_lamp_settings.ambient_light_hysteresis),
@@ -45,6 +46,7 @@ TEST_F(OnByAmbientLight, isOffWhenAboveThresholdAndHysteresisWithPreviousOn)
    const float lightAboveThresholdAndHysteresis =
       m_lamp_settings.ambient_light_threshold + m_lamp_settings.ambient_light_hysteresis
       + 1;
+
    EXPECT_THAT(shouldBeOnByAmbientLight(lightAboveThresholdAndHysteresis, LampState::ON,
                                         m_lamp_settings.ambient_light_threshold,
                                         m_lamp_settings.ambient_light_hysteresis),
@@ -54,6 +56,7 @@ TEST_F(OnByAmbientLight, isOffWhenAboveThresholdAndHysteresisWithPreviousOn)
 TEST_F(OnByAmbientLight, isOffWhenAboveThresholdWithPreviousUnknown)
 {
    const float lightAboveThreshold = m_lamp_settings.ambient_light_threshold + 1.0f;
+
    EXPECT_THAT(shouldBeOnByAmbientLight(lightAboveThreshold, LampState::UNKNOWN,
                                         m_lamp_settings.ambient_light_threshold,
                                         m_lamp_settings.ambient_light_hysteresis),
@@ -64,6 +67,7 @@ TEST_F(OnByAmbientLight, isOffWhenBelowThresholdButAboveHysteresisWithPreviousOf
 {
    const float lightBelowThresholdAboveHystsresis =
       m_lamp_settings.ambient_light_threshold - 1.0f;
+
    EXPECT_THAT(
       shouldBeOnByAmbientLight(lightBelowThresholdAboveHystsresis, LampState::OFF,
                                m_lamp_settings.ambient_light_threshold,
@@ -76,6 +80,7 @@ TEST_F(OnByAmbientLight, isOnWhenBelowThresholdAndHysteresisWithPreviousOff)
    const float lightBelowThresholdAndHysteresis =
       m_lamp_settings.ambient_light_threshold - m_lamp_settings.ambient_light_hysteresis
       - 1.0f;
+
    EXPECT_THAT(shouldBeOnByAmbientLight(lightBelowThresholdAndHysteresis, LampState::OFF,
                                         m_lamp_settings.ambient_light_threshold,
                                         m_lamp_settings.ambient_light_hysteresis),
@@ -148,6 +153,42 @@ TEST_F(OnByTime, isOnInsideRandomOnTime)
    m_lamp_status.day_for_random = getYearDay(time);
 
    ASSERT_THAT(shouldBeOnByTime(time, m_lamp_settings.timings, m_lamp_status, ran_gen),
+               Eq(true));
+}
+
+using IsOnByMotionDetector = ShouldBeOn;
+
+const MotionDetectorSettings MOTION_SETTINGS{"yard", 10};
+
+TEST_F(IsOnByMotionDetector, isOffWhenNotConfigured)
+{
+   const std::time_t time = makeTime(Weekday::SUNDAY, 9, 0);
+
+   ASSERT_THAT(shouldBeOnByMotionDetector(time, {}, time), Eq(false));
+}
+
+TEST_F(IsOnByMotionDetector, isOffWhenNoMotionDetectorTime)
+{
+   const std::time_t time = makeTime(Weekday::SUNDAY, 9, 0);
+
+   ASSERT_THAT(shouldBeOnByMotionDetector(time, MOTION_SETTINGS, {}), Eq(false));
+}
+
+TEST_F(IsOnByMotionDetector, isOffWhenMotionDetectorTimeLongerAgoThanOnTime)
+{
+   const std::time_t time = makeTime(Weekday::SUNDAY, 9, 0);
+
+   ASSERT_THAT(shouldBeOnByMotionDetector(time, MOTION_SETTINGS,
+                                          time - 2 * MOTION_SETTINGS.on_time * 60ul),
+               Eq(false));
+}
+
+TEST_F(IsOnByMotionDetector, isOnWhenMotionDetectorTimeLessThanOnTimeAgo)
+{
+   const std::time_t time = makeTime(Weekday::SUNDAY, 9, 0);
+
+   ASSERT_THAT(shouldBeOnByMotionDetector(time, MOTION_SETTINGS,
+                                          time - MOTION_SETTINGS.on_time * 60ul / 2ul),
                Eq(true));
 }
 

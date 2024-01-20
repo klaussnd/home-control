@@ -10,15 +10,18 @@ template <typename T>
 bool matchesTime(const T& timing, unsigned int minute_of_day);
 }
 
-void handleLamp(std::time_t time, float ambientlight, const LampSettings& settings,
-                LampInfo& status, std::mt19937& ran_gen,
+void handleLamp(std::time_t time, float ambientlight,
+                const std::optional<std::time_t>& last_motion_detector_time,
+                const LampSettings& settings, LampInfo& status, std::mt19937& ran_gen,
                 std::function<void(bool)> switch_function)
 {
    const bool ison_by_ambientlight = shouldBeOnByAmbientLight(
       ambientlight, status.state, settings.ambient_light_threshold,
       settings.ambient_light_hysteresis);
    const bool ison_by_time = shouldBeOnByTime(time, settings.timings, status, ran_gen);
-   const bool nominal_state = ison_by_ambientlight && ison_by_time;
+   const bool ison_by_motion =
+      shouldBeOnByMotionDetector(time, settings.motion, last_motion_detector_time);
+   const bool nominal_state = ison_by_ambientlight && (ison_by_time || ison_by_motion);
    if (status.state == LampState::UNKNOWN || nominal_state != toBool(status.state))
    {
       switch_function(nominal_state);
@@ -75,6 +78,18 @@ bool shouldBeOnByTime(std::time_t time, const std::vector<LampTime>& timings,
       }
    }
    return false;
+}
+
+bool shouldBeOnByMotionDetector(std::time_t time,
+                                const std::optional<MotionDetectorSettings>& settings,
+                                const std::optional<std::time_t>& motion_trigger_time)
+{
+   if (!settings.has_value() || !motion_trigger_time.has_value())
+   {
+      return false;
+   }
+   const std::time_t end_time = motion_trigger_time.value() + settings->on_time * 60ul;
+   return time < end_time;
 }
 
 std::vector<OnOffTime> initialiseRandomTimes(const LampTime& timing,
