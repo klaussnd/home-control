@@ -7,6 +7,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <iostream>
+
 namespace
 {
 std::unordered_map<std::string, std::string> parseMotionDetectors(
@@ -15,6 +17,8 @@ LampSettings parseLampSettings(const libconfig::Setting& conf_lamp, float hyster
 LampTime parseLampTiming(const libconfig::Setting& conf_schedule_item);
 Weekday parseWeekdays(const libconfig::Setting& conf);
 unsigned int parseTime(const libconfig::Setting& conf);
+
+void checkConsistency(const Settings& settings);
 }  // namespace
 
 Settings readSettings(const std::string& path)
@@ -47,6 +51,8 @@ Settings readSettings(const std::string& path)
       {
          settings.lamps.push_back(parseLampSettings(conf_lamp, hysteresis));
       }
+
+      checkConsistency(settings);
 
       return settings;
    }
@@ -217,5 +223,37 @@ Weekday parseWeekday(const std::string& wday)
    }
 
    throw std::runtime_error("Cannot parse weekday " + wday);
+}
+
+void checkConsistency(const Settings& settings)
+{
+   std::unordered_map<std::string, unsigned int> motion_detector_use;
+   for (const auto& [_, detector_name] : settings.motion_detectors)
+   {
+      motion_detector_use[detector_name] = 0u;
+   }
+   for (const auto& lamp : settings.lamps)
+   {
+      if (lamp.motion.has_value())
+      {
+         const auto& detector_name = lamp.motion.value().detector_name;
+         const auto it = motion_detector_use.find(detector_name);
+         if (it == motion_detector_use.end())
+         {
+            throw std::runtime_error(
+               "Inconsistent settings: lamp " + lamp.name
+               + " is configured to use non-existent motion detector " + detector_name);
+         }
+         it->second++;
+      }
+   }
+
+   for (const auto& [detector_name, use_count] : motion_detector_use)
+   {
+      if (use_count == 0)
+      {
+         std::cout << "Note: Unused motion detector " + detector_name << '\n';
+      }
+   }
 }
 }  // namespace
