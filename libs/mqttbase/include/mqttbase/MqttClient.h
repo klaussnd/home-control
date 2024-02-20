@@ -5,6 +5,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 struct mosquitto;
 
@@ -56,7 +57,8 @@ public:
       publish(topic, std::string{});
    }
 
-   void subscribe(const std::string& topic);
+   bool subscribe(const std::string& topic);
+   bool subscribe(const std::vector<std::string>& topics);
 
    void setCallback(MqttCallback& cb);
 

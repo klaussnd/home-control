@@ -82,9 +82,25 @@ void MqttClient::publish(const std::string& topic, const std::string& value)
                      reinterpret_cast<const void*>(value.c_str()), QOS, false);
 }
 
-void MqttClient::subscribe(const std::string& topic)
+bool MqttClient::subscribe(const std::string& topic)
 {
-   mosquitto_subscribe(m_mosquitto.get(), nullptr, fullTopic(topic).c_str(), 0);
+   return mosquitto_subscribe(m_mosquitto.get(), nullptr, fullTopic(topic).c_str(), 0)
+          == MOSQ_ERR_SUCCESS;
+}
+
+bool MqttClient::subscribe(const std::vector<std::string>& topics)
+{
+   std::vector<std::string> full_topics(topics.size());
+   char* topic_ptr[topics.size()];
+   for (std::size_t i = 0; i < full_topics.size(); ++i)
+   {
+      full_topics[i] = fullTopic(topics[i]);
+      topic_ptr[i] = full_topics[i].data();
+   }
+   return mosquitto_subscribe_multiple(m_mosquitto.get(), nullptr,
+                                       static_cast<int>(topics.size()), topic_ptr, 0, 0,
+                                       nullptr)
+          == MOSQ_ERR_SUCCESS;
 }
 
 void MqttClient::setCallback(MqttCallback& cb)

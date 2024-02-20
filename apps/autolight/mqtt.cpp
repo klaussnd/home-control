@@ -63,10 +63,13 @@ std::optional<std::time_t> MotionDetectorMqttCallback::lastDetectionTime(
 
 void MotionDetectorMqttCallback::connected()
 {
+   std::vector<std::string> topics;
+   topics.reserve(m_topics.size());
    for (const auto& [topic, _] : m_topics)
    {
-      m_client.subscribe(topic);
+      topics.push_back(topic);
    }
+   m_client.subscribe(topics);
 }
 
 void MotionDetectorMqttCallback::messageArrived(const std::string& topic,

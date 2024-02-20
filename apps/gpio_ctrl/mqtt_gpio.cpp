@@ -33,13 +33,19 @@ GpioMqttCallback::~GpioMqttCallback()
 
 void GpioMqttCallback::connected()
 {
-   m_client.subscribe("#");
+   std::vector<std::string> topics;
+   for (const auto& channel : m_channels)
+   {
+      topics.push_back(channel.name + m_topic_suffix);
+   }
+   m_client.subscribe(topics);
 }
 
 void GpioMqttCallback::messageArrived(const std::string& topic, const std::string& value)
 {
    auto it = std::find_if(m_channels.begin(), m_channels.end(),
-                          [&topic, &suffix = m_topic_suffix](const auto& channel) {
+                          [&topic, &suffix = m_topic_suffix](const auto& channel)
+                          {
                              const std::string expected_topic = channel.name + suffix;
                              return expected_topic == topic;
                           });
