@@ -15,6 +15,8 @@ The intended logic is achieved as follows:
 * If the measured ambient sunlight raises above a given threshold, or the time goes outside the "on" period, the lamp is switched off.
 * Hysteresis is used to bypass measurement noise.
 
+Additionally, movement detectors can switch on lamps for a given time, if the ambient sunlight measurement shows that it is dark.
+
 Optionally there is the possibility to randomly switch lights to simulate presence while being on holiday.
 For each light, you configure the average presence time and its variance, and the number of times you are there.
 The presence time is drawn from a normal distribution with the given mean and variance.
