@@ -1,5 +1,5 @@
 add_executable(tests_unit_gpio_ctrl
-    runner.cpp
+    ../../../libs/test_helper/runner.cpp
     test_settings_reader.cpp
     ../settings_reader.cpp
 )

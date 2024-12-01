@@ -1,5 +1,5 @@
 add_executable(tests_unit_autolight
-    runner.cpp
+    ../../../libs/test_helper/runner.cpp
     test_output.cpp
     test_output_functions.cpp
     test_settings_reader.cpp
