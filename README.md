@@ -1,6 +1,7 @@
 # Home control helpers
 
 This repo contains applications to help you control your home. They are intended to be run on Linux-based single-board computers like a Raspberry Pi or Beagle Bone and use MQTT.
+They are very lightweight, only need small hardware, and are simple and easy to understand, yet they cover main automation needs.
 
 ## Lamp control via MQTT
 
@@ -30,6 +31,12 @@ just as if you would do if you would be physically present in the given room.
 
 `gpio_ctrl` switches GPIOs based on MQTT messages. It allows you to use the GPIOs of your single-board computer to control lamps or other devices. A configuration file is used to define the GPIOs and MQTT topics; an example file can be found [here](apps/gpio_ctrl/example.cfg). The topic can be configured to be compatible with [Tasmota](https://tasmota.github.io/docs/MQTT/#command-flow); the payload is assumed to be `ON` or `OFF`. The user which runs the app must have read-write access to the respective `/dev/gpiochip?` device, which typically requires the user to be a member of the group `gpio`; running as root is not recomended.
 
+## Perform actions when values exceed critical values
+
+`value_action` monitors values by listening to MQTT messages and performs actions if a value falls below or above given thresholds by sending MQTT messages. This can, for example, be used to raise alarms or to do simple control like switching on the heating if it becomes too cold in a room.
+
+Actions are triggered if the value falls below the minimum threshold, but only the first time after it previously was above the maximum threshold, and vice versa if the value raises above the maximum threshold, but only the first time after it previously was below the minimum threshold. This avoids triggering actions multiple times due to fluctuations. For example, an alarm can be raised or the heating switched on with the `action_min` and the alarm cleared or the heating switched off with the `action_max`.
+
 ## How to build
 
 The program is written in C++. It requires a C++17 compatible compiler and uses CMake. The following 3rd-party libraries are necessary:
@@ -37,6 +44,7 @@ The program is written in C++. It requires a C++17 compatible compiler and uses 
 * [libmosquitto](https://mosquitto.org/api/) - `apt install libmosquitto-dev`
 * [libconfig++](https://github.com/hyperrealm/libconfig) - `apt install libconfig++-dev`
 * [libgpiod](https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/about/) (requires version 2) - `apt install libgpiod-dev`
+* [JSON for modern C++](https://github.com/nlohmann/json) - `apt install nlohmann-json3-dev`
 
 Only for the tests:
 
