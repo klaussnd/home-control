@@ -36,7 +36,7 @@ The program is written in C++. It requires a C++17 compatible compiler and uses 
 
 * [libmosquitto](https://mosquitto.org/api/) - `apt install libmosquitto-dev`
 * [libconfig++](https://github.com/hyperrealm/libconfig) - `apt install libconfig++-dev`
-* [libgpiod](https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/about/) - `apt install libgpiod-dev`
+* [libgpiod](https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/about/) (requires version 2) - `apt install libgpiod-dev`
 
 Only for the tests:
 

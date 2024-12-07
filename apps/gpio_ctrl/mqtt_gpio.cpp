@@ -4,31 +4,28 @@
 
 #include <iostream>
 
+namespace
+{
+gpiod::line_request makeGpioRequest(gpiod::chip& chip,
+                                    const std::vector<GpioSetting>& settings);
+}
+
 GpioMqttCallback::GpioMqttCallback(MqttClient& mqtt_client, gpiod::chip& chip,
                                    const std::string& topic_suffix,
                                    const std::vector<GpioSetting>& settings)
       : m_client(mqtt_client)
+      , m_gpio_request(makeGpioRequest(chip, settings))
+      , m_channels(settings)
 {
    if (!topic_suffix.empty())
    {
       m_topic_suffix = '/' + topic_suffix;
    }
-   const std::string app_name{"gpio_ctrl"};
-   for (const auto& gpio : settings)
-   {
-      auto& channel =
-         m_channels.emplace_back(LineData{chip.get_line(gpio.number), gpio.name});
-      channel.gpio_line.request(
-         gpiod::line_request{app_name, gpiod::line_request::DIRECTION_OUTPUT, 0});
-   }
 }
 
 GpioMqttCallback::~GpioMqttCallback()
 {
-   for (auto& item : m_channels)
-   {
-      item.gpio_line.release();
-   }
+   m_gpio_request.release();
 }
 
 void GpioMqttCallback::connected()
@@ -55,9 +52,27 @@ void GpioMqttCallback::messageArrived(const std::string& topic, const std::strin
       const bool isoff = value == "OFF";
       if (ison || isoff)
       {
-         it->gpio_line.set_value(ison);
+         m_gpio_request.set_value(
+            it->number, ison ? gpiod::line::value::ACTIVE : gpiod::line::value::INACTIVE);
          std::cout << "Switching " << it->name << " " << (ison ? "on" : "off")
                    << std::endl;
       }
    }
 }
+
+namespace
+{
+gpiod::line_request makeGpioRequest(gpiod::chip& chip,
+                                    const std::vector<GpioSetting>& settings)
+{
+   constexpr auto app_name = "gpio_ctrl";
+   auto request_builder = chip.prepare_request();
+   request_builder.set_consumer(app_name);
+   for (const auto& gpio : settings)
+   {
+      request_builder.add_line_settings(gpio.number, gpiod::line_settings().set_direction(
+                                                        gpiod::line::direction::OUTPUT));
+   }
+   return request_builder.do_request();
+}
+}  // namespace

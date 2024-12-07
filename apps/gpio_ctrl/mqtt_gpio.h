@@ -19,13 +19,8 @@ private:
    void messageArrived(const std::string& topic, const std::string& value) override;
 
 private:
-   struct LineData
-   {
-      gpiod::line gpio_line;
-      std::string name;
-   };
-
    MqttClient& m_client;
+   gpiod::line_request m_gpio_request;
    std::string m_topic_suffix;
-   std::vector<LineData> m_channels;
+   std::vector<GpioSetting> m_channels;
 };
