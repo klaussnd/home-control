@@ -3,6 +3,8 @@ add_executable(value_action
     value_action.cpp
     json_helper.h
     json_helper.cpp
+    linearcolourmap.h
+    linearcolourmap.cpp
     mqtt.h
     mqtt.cpp
     settings.h

@@ -61,6 +61,8 @@ Settings readSettings(const std::string& path)
 namespace
 {
 std::vector<Action> parseActions(const libconfig::Setting& conf_actions);
+Visualisation parseVisualisation(const libconfig::Setting& conf_visualisation);
+ColourMapType colourMapTypeFromString(const std::string& str);
 
 ValueConfig parseValueConfigSettings(const libconfig::Setting& conf_item)
 {
@@ -70,8 +72,18 @@ ValueConfig parseValueConfigSettings(const libconfig::Setting& conf_item)
    item.json_ptr = static_cast<std::string>(conf_item.lookup("json_ptr"));
    item.min = static_cast<float>(conf_item.lookup("min"));
    item.max = static_cast<float>(conf_item.lookup("max"));
-   item.action_min = parseActions(conf_item.lookup("action_min"));
-   item.action_max = parseActions(conf_item.lookup("action_max"));
+   if (conf_item.exists("action_min"))
+   {
+      item.action_min = parseActions(conf_item.lookup("action_min"));
+   }
+   if (conf_item.exists("action_max"))
+   {
+      item.action_max = parseActions(conf_item.lookup("action_max"));
+   }
+   if (conf_item.exists("visualisation"))
+   {
+      item.visualisation = parseVisualisation(conf_item.lookup(("visualisation")));
+   }
    return item;
 }
 
@@ -91,5 +103,32 @@ std::vector<Action> parseActions(const libconfig::Setting& conf_actions)
                                static_cast<std::string>(conf_action.lookup("payload"))});
    }
    return actions;
+}
+
+Visualisation parseVisualisation(const libconfig::Setting& conf_visualisation)
+{
+   return {static_cast<std::string>(conf_visualisation.lookup("topic")),
+           static_cast<std::string>(conf_visualisation.lookup("payload")),
+           colourMapTypeFromString(
+              static_cast<std::string>(conf_visualisation.lookup("colourmap"))),
+           static_cast<unsigned int>(conf_visualisation.lookup("brightness_percent"))};
+}
+
+ColourMapType colourMapTypeFromString(const std::string& str)
+{
+   if (str == "green_red")
+   {
+      return ColourMapType::GREEN_RED;
+   }
+   if (str == "red_green")
+   {
+      return ColourMapType::RED_GREEN;
+   }
+   if (str == "blue_red")
+   {
+      return ColourMapType::BLUE_RED;
+   }
+
+   throw std::runtime_error("Unknown colour map " + str);
 }
 }  // namespace
