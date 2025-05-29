@@ -31,11 +31,14 @@ just as if you would do if you would be physically present in the given room.
 
 `gpio_ctrl` switches GPIOs based on MQTT messages. It allows you to use the GPIOs of your single-board computer to control lamps or other devices. A configuration file is used to define the GPIOs and MQTT topics; an example file can be found [here](apps/gpio_ctrl/example.cfg). The topic can be configured to be compatible with [Tasmota](https://tasmota.github.io/docs/MQTT/#command-flow); the payload is assumed to be `ON` or `OFF`. The user which runs the app must have read-write access to the respective `/dev/gpiochip?` device, which typically requires the user to be a member of the group `gpio`; running as root is not recomended.
 
-## Perform actions when values exceed critical values
+## Perform actions when values exceed critical values and visualise values
 
 `value_action` monitors values by listening to MQTT messages and performs actions if a value falls below or above given thresholds by sending MQTT messages. This can, for example, be used to raise alarms or to do simple control like switching on the heating if it becomes too cold in a room.
 
 Actions are triggered if the value falls below the minimum threshold, but only the first time after it previously was above the maximum threshold, and vice versa if the value raises above the maximum threshold, but only the first time after it previously was below the minimum threshold. This avoids triggering actions multiple times due to fluctuations. For example, an alarm can be raised or the heating switched on with the `action_min` and the alarm cleared or the heating switched off with the `action_max`.
+
+It also allows to visualise the values with a colour scale, by sending an RGB value which colour-encodes a monitored value as MQTT message, which can then, for example, be displayed by an RGB LED on a status display. This is configured with the `visualisation` configuration item. A minimum and maximum value and a colour scale can be chosen, which linearly encodes the value between minimum and maximum. Available colour scales are `green_red`, `red_green`, and `blue_red`.
+
 
 ## How to build
 
